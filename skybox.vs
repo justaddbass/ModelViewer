@@ -8,6 +8,6 @@ uniform mat4 vp;
 
 void main() {
     gl_Position = vp * vec4(position, 1);
-    //gl_Position = gl_Position.xyww;
+    gl_Position = gl_Position.xyww;
     UV = position;
 }

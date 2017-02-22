@@ -1,14 +1,18 @@
 #include "Mesh.h"
 
+
+#include "stb_image.h"
+
 Mesh::Mesh(const char* path) {
     //TextureID  = glGetUniformLocation(programID, "texture_sampler");
 
     std::vector< glm::vec3 > vertices;
 	std::vector< glm::vec2 > uvs;
 	std::vector< glm::vec3 > normals;
-	AssimpLoadFile(path, vertices, uvs, normals);
+    std::vector<unsigned short> indices;
+	AssimpLoadFile(path, vertices, uvs, normals, indices);
 
-	std::vector<unsigned short> indices;
+
 	std::vector<glm::vec3> indexed_vertices;
 	std::vector<glm::vec2> indexed_uvs;
 	std::vector<glm::vec3> indexed_normals;
@@ -17,6 +21,27 @@ Mesh::Mesh(const char* path) {
 
     indices_count = indices.size();
 
+    //Texture
+    glGenTextures(1, &textureID);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, textureID);
+
+    int width, height, numComponents;
+    unsigned char* imageData;
+
+    imageData = stbi_load("capsule0.jpeg", &width, &height, &numComponents, 3);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    
+    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, imageData);
+
+    stbi_image_free(imageData);
+
+    //VAO
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
 
@@ -25,7 +50,7 @@ Mesh::Mesh(const char* path) {
 	glBufferData(GL_ARRAY_BUFFER, indexed_vertices.size() * sizeof(glm::vec3), &indexed_vertices[0], GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0 );
-#if 0
+#if 1
 	glGenBuffers(1, &uv_buffer);
 	glBindBuffer(GL_ARRAY_BUFFER, uv_buffer);
 	glBufferData(GL_ARRAY_BUFFER, indexed_uvs.size() * sizeof(glm::vec2), &indexed_uvs[0], GL_STATIC_DRAW);
@@ -43,26 +68,18 @@ Mesh::Mesh(const char* path) {
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), &indices[0] , GL_STATIC_DRAW);
 
     glBindVertexArray(0);
-    /*
-    if(tiva != 0) {
-        tiva = new btTriangleIndexVertexArray(
-            indices.size() / 3, //assuming indices is divisible by 3 may not be true
-            (int*)&indices[0],
-            sizeof(unsigned short),
-            indexed_vertices.size(),
-            (btScalar*)&indexed_vertices[0],
-            sizeof(glm::vec3)
-        );
-    }*/
 }
 
 Mesh::~Mesh() {
     glDeleteVertexArrays(1, &vao);
 }
 
-void Mesh::Draw() {
+void Mesh::Draw(GLuint shader) {
     glBindVertexArray(vao);
 
+    glActiveTexture(GL_TEXTURE0);
+    glUniform1i(glGetUniformLocation(shader, "texture_sampler"), 0);
+    glBindTexture(GL_TEXTURE_2D, textureID);
     glDrawElements(GL_TRIANGLES, indices_count, GL_UNSIGNED_SHORT, (void*)0 );
 	//glDrawArrays(GL_TRIANGLES, 0, indices_count);
 

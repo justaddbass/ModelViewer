@@ -129,7 +129,7 @@ void indexVBO(
 			out_indices.push_back( index );
 		} else { // If not, it needs to be added in the output data.
 			out_vertices.push_back( in_vertices[i]);
-			//out_uvs     .push_back( in_uvs[i]);
+			out_uvs     .push_back( in_uvs[i]);
 			out_normals .push_back( in_normals[i]);
 			unsigned short newindex = (unsigned short)out_vertices.size() - 1;
 			out_indices .push_back( newindex );

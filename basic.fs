@@ -1,13 +1,14 @@
 #version 330 core
 
-in vec3 UV;
+in vec2 UV;
 in vec3 normal;
 
 out vec4 color;
 
-uniform samplerCube texture_sampler;
+uniform sampler2D texture_sampler;
 
 void main() {
 
-	color = vec4(normal.x, normal.y, normal.z, 1.0);
+	//color = vec4(normal.x, normal.y, normal.z, 1.0);
+	color = texture(texture_sampler, UV);
 }

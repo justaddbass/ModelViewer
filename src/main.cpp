@@ -30,6 +30,11 @@ int main(int, char**) {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
 #endif
 
+	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
+
+	SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
+
     g_window = SDL_CreateWindow("Modelviewer", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, windowWidth, windowHeight, SDL_WINDOW_OPENGL);
     _glContext = SDL_GL_CreateContext(g_window);
 
@@ -38,10 +43,11 @@ int main(int, char**) {
     SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
     SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
     SDL_GL_SetAttribute(SDL_GL_BUFFER_SIZE,32);
-    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE,16);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE,32);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER,1);
 
-    //glEnable(GL_TEXTURE_2D);
+	glEnable(GL_MULTISAMPLE);
+
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
     glEnable(GL_CULL_FACE);
@@ -59,7 +65,8 @@ int main(int, char**) {
     printf("%s\n", glGetString(GL_VERSION));
 #endif
 
-    Mesh model("wt_teapot.obj");
+    //Mesh model("wt_teapot.obj");
+	Mesh model("capsule.obj");
 
     glm::mat4 projection = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.0f);
     glm::mat4 view = glm::lookAt(glm::vec3(5,5,5), glm::vec3(0,0,0), glm::vec3(0,1,0));
@@ -98,16 +105,17 @@ int main(int, char**) {
             isRunning = false;
         }
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glm::vec3 pos = glm::vec3(2*cos(phi), 2, 2*sin(phi));
+        glm::vec3 pos = glm::vec3(0.9*cos(phi), 0.75, 0.9*sin(phi));
         view = glm::lookAt(pos, glm::vec3(0,0,0), glm::vec3(0,1,0));
         glm::mat4 vp_mat = projection * view;
+
+		glUniformMatrix4fv(vpID, 1, GL_FALSE, &vp_mat[0][0]);
+		glUseProgram(shader);
+        model.Draw(shader);
 
 		glUniformMatrix4fv(vpID2, 1, GL_FALSE, &vp_mat[0][0]);
 		sb.Draw();
 
-		glUniformMatrix4fv(vpID, 1, GL_FALSE, &vp_mat[0][0]);
-		glUseProgram(shader);
-        model.Draw();
         SDL_GL_SwapWindow(g_window);
         if(phi >= 2 * PI)
             phi = 0;

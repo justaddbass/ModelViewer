@@ -83,11 +83,10 @@ Skybox::Skybox(std::vector<const char*> files) {
     glBindVertexArray(0);
 
     shader = LoadShaders("skybox.vs", "skybox.fs");
-    //shader = LoadShaders("basic.vs", "basic.fs");
 }
 
 void Skybox::Draw() {
-    glDepthMask(false);
+    glDepthFunc(GL_LEQUAL);
     glUseProgram(shader);
     glBindVertexArray(vao);
     glActiveTexture(GL_TEXTURE0);
@@ -95,5 +94,5 @@ void Skybox::Draw() {
     glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
     glDrawArrays(GL_TRIANGLES, 0, 36);
     glBindVertexArray(0);
-    glDepthMask(true);
+    glDepthFunc(GL_LESS);
 }

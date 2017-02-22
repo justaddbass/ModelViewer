@@ -12,6 +12,7 @@
 
 #include "AssimpLoader.h"
 #include "vboindexer.h"
+#include "Shaders.h"
 
 class Mesh {
 public:
@@ -20,7 +21,7 @@ public:
     //Mesh(const char* path, btTriangleMesh &mesh);
     ~Mesh();
 
-    void Draw();
+    void Draw(GLuint shader);
 private:
     unsigned int indices_count;
     GLuint textureID;
