@@ -10,16 +10,16 @@ Mesh::Mesh(const char* path) {
 	std::vector< glm::vec2 > uvs;
 	std::vector< glm::vec3 > normals;
     std::vector<unsigned short> indices;
-	AssimpLoadFile(path, vertices, uvs, normals, indices);
+	AssimpLoadFile(path, vertices, normals, indices);
 
 
 	std::vector<glm::vec3> indexed_vertices;
 	std::vector<glm::vec2> indexed_uvs;
 	std::vector<glm::vec3> indexed_normals;
-	indexVBO(vertices, uvs, normals, indices, indexed_vertices, indexed_uvs, indexed_normals);
+	//indexVBO(vertices, uvs, normals, indices, indexed_vertices, indexed_uvs, indexed_normals);
     //AssimpLoadFile(path, indexed_vertices, indexed_uvs, indexed_normals, indices);
 
-    indices_count = indices.size();
+    indices_count = vertices.size();
 
     //Texture
     glGenTextures(1, &textureID);
@@ -35,7 +35,7 @@ Mesh::Mesh(const char* path) {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    
+
     glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, imageData);
 
@@ -47,10 +47,10 @@ Mesh::Mesh(const char* path) {
 
 	glGenBuffers(1, &vertex_buffer);
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-	glBufferData(GL_ARRAY_BUFFER, indexed_vertices.size() * sizeof(glm::vec3), &indexed_vertices[0], GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0 );
-#if 1
+#if 0
 	glGenBuffers(1, &uv_buffer);
 	glBindBuffer(GL_ARRAY_BUFFER, uv_buffer);
 	glBufferData(GL_ARRAY_BUFFER, indexed_uvs.size() * sizeof(glm::vec2), &indexed_uvs[0], GL_STATIC_DRAW);
@@ -59,14 +59,14 @@ Mesh::Mesh(const char* path) {
 #endif
 	glGenBuffers(1, &normal_buffer);
 	glBindBuffer(GL_ARRAY_BUFFER, normal_buffer);
-	glBufferData(GL_ARRAY_BUFFER, indexed_normals.size() * sizeof(glm::vec3), &indexed_normals[0], GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), &normals[0], GL_STATIC_DRAW);
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)0 );
-
+#if 0
 	glGenBuffers(1, &element_buffer);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buffer);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), &indices[0] , GL_STATIC_DRAW);
-
+#endif
     glBindVertexArray(0);
 }
 
@@ -80,8 +80,8 @@ void Mesh::Draw(GLuint shader) {
     glActiveTexture(GL_TEXTURE0);
     glUniform1i(glGetUniformLocation(shader, "texture_sampler"), 0);
     glBindTexture(GL_TEXTURE_2D, textureID);
-    glDrawElements(GL_TRIANGLES, indices_count, GL_UNSIGNED_SHORT, (void*)0 );
-	//glDrawArrays(GL_TRIANGLES, 0, indices_count);
+    //glDrawElements(GL_TRIANGLES, indices_count, GL_UNSIGNED_SHORT, (void*)0 );
+	glDrawArrays(GL_TRIANGLES, 0, indices_count);
 
     glBindVertexArray(0);
 }

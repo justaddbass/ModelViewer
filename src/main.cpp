@@ -66,7 +66,7 @@ int main(int, char**) {
 #endif
 
     //Mesh model("wt_teapot.obj");
-	Mesh model("capsule.obj");
+	Mesh model("dragon.obj");
 
     glm::mat4 projection = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.0f);
     glm::mat4 view = glm::lookAt(glm::vec3(5,5,5), glm::vec3(0,0,0), glm::vec3(0,1,0));
@@ -93,6 +93,11 @@ int main(int, char**) {
 	vpID2 = glGetUniformLocation(sb.getShader(), "vp");
     glUniformMatrix4fv(vpID, 1, GL_FALSE, &vp_mat[0][0]);
 
+	GLuint lightID = glGetUniformLocation(shader, "lightPos");
+	glUniform3f(lightID, 1.0f, 1.0f, 1.0f);
+
+	viewID = glGetUniformLocation(shader, "viewPos");
+
     double phi = 0;
     const double PI = 3.14159265;
 
@@ -108,6 +113,8 @@ int main(int, char**) {
         glm::vec3 pos = glm::vec3(0.9*cos(phi), 0.75, 0.9*sin(phi));
         view = glm::lookAt(pos, glm::vec3(0,0,0), glm::vec3(0,1,0));
         glm::mat4 vp_mat = projection * view;
+
+		glUniform3f(viewID, pos.x, pos.y, pos.z);
 
 		glUniformMatrix4fv(vpID, 1, GL_FALSE, &vp_mat[0][0]);
 		glUseProgram(shader);
