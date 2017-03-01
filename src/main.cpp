@@ -8,15 +8,38 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <vector>
-#include <stdio.h>
-#include <math.h>
+#include <cstdio>
+#include <cmath>
+#include <cstdlib>
 
 #include "AssimpLoader.h"
 #include "Mesh.h"
 #include "Shaders.h"
 #include "Skybox.h"
 
-int main(int, char**) {
+const GLfloat quad_vertices[] = {
+	1.0f,	-0.5f,	1.0f,
+	-1.0f,	-0.5f,	-1.0f,
+	-1.0f,	-0.5f,	1.0f,
+	-1.0f,	-0.5f,	-1.0f,
+	1.0f,	-0.5f,	1.0f,
+	1.0f,	-0.5f,	-1.0f
+};
+
+const GLfloat quad_uv[] = {
+	-1.0f,	1.0f,
+	-1.0f,	-1.0f,
+	1.0f,	1.0f,
+	1.0f,	-1.0f,
+	1.0f,	1.0f,
+	-1.0f,	-1.0f
+};
+
+void render() {
+
+}
+
+int main(int argc, char** argv) {
     SDL_Window* g_window;
     unsigned int windowHeight = 600, windowWidth = 800;
     SDL_GLContext _glContext;
@@ -31,7 +54,7 @@ int main(int, char**) {
 #endif
 
 	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
+	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 16);
 
 	SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
 
@@ -66,8 +89,13 @@ int main(int, char**) {
 #endif
 
     //Mesh model("wt_teapot.obj");
-	Mesh model("dragon.obj");
+	//Mesh model("dragon.obj");
 
+	//Arguments
+	Mesh model(argv[1]);
+	float scale = atof(argv[2]);
+
+	// camera and perspective matrix
     glm::mat4 projection = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.0f);
     glm::mat4 view = glm::lookAt(glm::vec3(5,5,5), glm::vec3(0,0,0), glm::vec3(0,1,0));
 
@@ -88,10 +116,50 @@ int main(int, char**) {
 	faces.push_back("skybox/front.jpg");
 	Skybox sb(faces);
 
+	//Ground
+	GLuint groundVAO, groundVerticesVBO, groundUvVBO;
+	glGenVertexArrays(1, &groundVAO);
+	glBindVertexArray(groundVAO);
+	glGenBuffers(1, &groundVerticesVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, groundVerticesVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vertices), quad_vertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+	glGenBuffers(1, &groundUvVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, groundUvVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(quad_uv), quad_uv, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+	glBindVertexArray(0);
+
+	// Depth buffer
+	GLuint depthFBO;
+	glGenFramebuffers(1, &depthFBO);
+	const GLuint SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+
+	GLuint depthMap;
+	glGenTextures(1, &depthMap);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT,
+	             SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
+	// Setting up shaders
     glUseProgram(shader);
     vpID = glGetUniformLocation(shader, "vp");
 	vpID2 = glGetUniformLocation(sb.getShader(), "vp");
     glUniformMatrix4fv(vpID, 1, GL_FALSE, &vp_mat[0][0]);
+	glUniform1f(glGetUniformLocation(shader, "scale"), scale);
 
 	GLuint lightID = glGetUniformLocation(shader, "lightPos");
 	glUniform3f(lightID, 1.0f, 1.0f, 1.0f);
@@ -110,7 +178,7 @@ int main(int, char**) {
             isRunning = false;
         }
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glm::vec3 pos = glm::vec3(0.9*cos(phi), 0.75, 0.9*sin(phi));
+        glm::vec3 pos = glm::vec3(0.9*cos(phi), 0.6, 0.9*sin(phi));
         view = glm::lookAt(pos, glm::vec3(0,0,0), glm::vec3(0,1,0));
         glm::mat4 vp_mat = projection * view;
 
@@ -119,6 +187,11 @@ int main(int, char**) {
 		glUniformMatrix4fv(vpID, 1, GL_FALSE, &vp_mat[0][0]);
 		glUseProgram(shader);
         model.Draw(shader);
+
+		// render groundVAO
+		glBindVertexArray(groundVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		glBindVertexArray(0);
 
 		glUniformMatrix4fv(vpID2, 1, GL_FALSE, &vp_mat[0][0]);
 		sb.Draw();

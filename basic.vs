@@ -9,9 +9,10 @@ out vec3 normal;
 out vec3 fragPos;
 
 uniform mat4 vp;
+uniform float scale;
 
 void main() {
-	gl_Position =  vp * vec4(0.75 * vertexPosition_modelspace,1);
+	gl_Position =  vp * vec4(scale * vertexPosition_modelspace,1);
 	//UV = vertexUV;
 	fragPos = vertexPosition_modelspace;
 	normal = vertexNormal_modelspace;
