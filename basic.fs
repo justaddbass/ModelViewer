@@ -25,6 +25,8 @@ void main() {
 	float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
 	vec3 specular = specularStrength * spec * lightColor;
 
-	color = vec4((ambientStrength + diff + specular)/* * normal.xyz*/, 1.0);
+	//color = vec4((ambientStrength + diff + specular)/* * normal.xyz*/, 1.0);
+	color = vec4(normal, 0.0);
 	//color = texture(texture_sampler, UV);
+
 }

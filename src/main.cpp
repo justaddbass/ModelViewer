@@ -11,6 +11,7 @@
 #include <cstdio>
 #include <cmath>
 #include <cstdlib>
+#include <AntTweakBar.h>
 
 #include "AssimpLoader.h"
 #include "Mesh.h"
@@ -18,12 +19,12 @@
 #include "Skybox.h"
 
 const GLfloat quad_vertices[] = {
-	1.0f,	-0.5f,	1.0f,
-	-1.0f,	-0.5f,	-1.0f,
-	-1.0f,	-0.5f,	1.0f,
-	-1.0f,	-0.5f,	-1.0f,
-	1.0f,	-0.5f,	1.0f,
-	1.0f,	-0.5f,	-1.0f
+	100.0f,	-0.5f,	100.0f,
+	-100.0f,	-0.5f,	-100.0f,
+	-100.0f,	-0.5f,	100.0f,
+	-100.0f,	-0.5f,	-100.0f,
+	100.0f,	-0.5f,	100.0f,
+	100.0f,	-0.5f,	-100.0f
 };
 
 const GLfloat quad_uv[] = {
@@ -69,6 +70,7 @@ int main(int argc, char** argv) {
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE,32);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER,1);
 
+	glViewport(0,0,windowWidth,windowHeight);
 	glEnable(GL_MULTISAMPLE);
 
     glEnable(GL_DEPTH_TEST);
@@ -88,16 +90,22 @@ int main(int argc, char** argv) {
     printf("%s\n", glGetString(GL_VERSION));
 #endif
 
-    //Mesh model("wt_teapot.obj");
-	//Mesh model("dragon.obj");
-
 	//Arguments
 	Mesh model(argv[1]);
 	float scale = atof(argv[2]);
 
+	// AntTweakBar
+	// macos needs core profile
+	TwInit(TW_OPENGL_CORE, NULL);
+	TwWindowSize(windowWidth, windowHeight);
+	TwBar* bar = TwNewBar("C++ Model Viewer");
+	//TwDefine(" ControlBar position='12 12' size='100 100' ");
+	TwAddVarRW(bar, "Scale", TW_TYPE_FLOAT, &scale, " label='scale'");
+
+
 	// camera and perspective matrix
     glm::mat4 projection = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.0f);
-    glm::mat4 view = glm::lookAt(glm::vec3(5,5,5), glm::vec3(0,0,0), glm::vec3(0,1,0));
+    glm::mat4 view = glm::lookAt(glm::vec3(1,1,1), glm::vec3(0,0,0), glm::vec3(0,1,0));
 
     glm::mat4 vp_mat = projection * view;
 
@@ -162,7 +170,7 @@ int main(int argc, char** argv) {
 	glUniform1f(glGetUniformLocation(shader, "scale"), scale);
 
 	GLuint lightID = glGetUniformLocation(shader, "lightPos");
-	glUniform3f(lightID, 1.0f, 1.0f, 1.0f);
+
 
 	viewID = glGetUniformLocation(shader, "viewPos");
 
@@ -174,27 +182,34 @@ int main(int argc, char** argv) {
 
     while(isRunning) {
         SDL_PollEvent(&sdlEvent);
+		TwEventSDL(&sdlEvent, SDL_MAJOR_VERSION, SDL_MINOR_VERSION);
         if(sdlEvent.type == SDL_QUIT) {
             isRunning = false;
         }
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glm::vec3 pos = glm::vec3(0.9*cos(phi), 0.6, 0.9*sin(phi));
+        glm::vec3 pos = glm::vec3(0.8*cos(phi), 0.2, 0.8*sin(phi));
+		glm::vec3 lightPos = glm::vec3(cos(phi), sin(phi), 1.0);
         view = glm::lookAt(pos, glm::vec3(0,0,0), glm::vec3(0,1,0));
         glm::mat4 vp_mat = projection * view;
 
 		glUniform3f(viewID, pos.x, pos.y, pos.z);
+		glUniform3f(lightID, lightPos.x, lightPos.y, lightPos.z);
 
 		glUniformMatrix4fv(vpID, 1, GL_FALSE, &vp_mat[0][0]);
 		glUseProgram(shader);
         model.Draw(shader);
-
+#if 0
 		// render groundVAO
 		glBindVertexArray(groundVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		glBindVertexArray(0);
-
+#endif	
+		//TODO: move skybox render call and disable depth buffer
 		glUniformMatrix4fv(vpID2, 1, GL_FALSE, &vp_mat[0][0]);
 		sb.Draw();
+
+		//TweakBar
+		TwDraw();
 
         SDL_GL_SwapWindow(g_window);
         if(phi >= 2 * PI)
@@ -202,4 +217,7 @@ int main(int argc, char** argv) {
         else
             phi += 0.01;
     }
+
+	TwTerminate();
+	SDL_Quit();
 }

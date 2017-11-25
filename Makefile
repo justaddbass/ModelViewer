@@ -11,7 +11,7 @@ CPPFLAGS+=-g -std=c++11 $(SDL_CFLAGS) -I$(INCLUDE) -I$(LOCAL_INCLUDE) -I$(LIB_DI
 TARGET = Modelviewer
 
 UNIX_LIBS=-lSDL2 -lGL -lGLEW -llua -lassimp
-MAC_LIBS=-framework OpenGL $(SDL_LIBS) -llua -lassimp
+MAC_LIBS=-framework OpenGL $(SDL_LIBS) -llua -lassimp -lAntTweakBar
 
 OBJ := $(patsubst %.cpp,%.o,$(wildcard src/*.cpp) $(wildcard src/**/*.cpp))
 OS := $(shell uname -s)
